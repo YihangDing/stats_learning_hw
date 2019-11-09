@@ -1,0 +1,203 @@
+---
+title: "HW1-Programming Problems"
+author: "Yihang Ding"
+date: "9/20/2019"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## P3
+```{r}
+x <- rnorm(100, 0, 1)
+eps <- rnorm(100, 0, 0.25)
+y <- -1 + 0.5*x + eps
+plot(x,y,col="red")
+```
+(c) $\beta_0$ = -1, $\beta_1$ = 0.5
+(d) There's a strong linear relationship between X and Y
+
+```{r linear}
+lm1 <- lm(y~x)
+summary(lm1)
+```
+(e) They are very close to $\beta_0$ and $\beta_1$, $\hat{\beta_1}$ is lower and $\hat{\beta_0}$ is higher than real value. 
+(f)
+```{r}
+lm1_pred <- predict(lm1)
+plot(x, y, col="red", pch=20)
+segments(x, y, x, lm1_pred)
+abline(lm1, col="blue", lwd=2)
+legend("topleft", inset=.01, c("point", "least square", "regression line"), lwd=2, col=c("red", "black", "blue"))
+```
+```{r}
+lm2 = lm(y~x+I(x^2))
+summary(lm2)
+```
+(g) There's no evidence that the quadratic term improves the model fit, as the adjusted R-squared dropped from 0.767 to 0.7651
+
+(h) After reducing the variance of data, the model fits more to the data,
+the residuals are smaller and the adjusted R-square increased from 0.767 to 0.9664.
+```{r}
+x <- rnorm(100, 0, 1)
+eps <- rnorm(100, 0, 0.1)
+y <- -1 + 0.5*x + eps
+plot(x,y,col="red")
+```
+
+```{r}
+lm3 <- lm(y~x)
+summary(lm3)
+```
+
+```{r}
+lm3_pred <- predict(lm3)
+plot(x, y, col="red", pch=20)
+segments(x, y, x, lm3_pred)
+abline(lm3, col="blue", lwd=2)
+legend("topleft", inset=.01, c("point", "least square", "regression line"), lwd=2, col=c("red", "black", "blue"))
+```
+
+```{r}
+lm4 = lm(y~x+I(x^2))
+summary(lm4)
+```
+
+(i) After increasing the variance of data, the model fits less to the data,
+the residuals are larger and the adjusted R-square decreased from 0.767 to 0.473.
+```{r}
+x <- rnorm(100, 0, 1)
+eps <- rnorm(100, 0, 0.5)
+y <- -1 + 0.5*x + eps
+plot(x,y,col="red")
+```
+
+```{r}
+lm5 <- lm(y~x)
+summary(lm5)
+```
+
+```{r}
+lm5_pred <- predict(lm5)
+plot(x, y, col="red", pch=20)
+segments(x, y, x, lm5_pred)
+abline(lm5, col="blue", lwd=2)
+legend("topleft", inset=.01, c("point", "least square", "regression line"), lwd=2, col=c("red", "black", "blue"))
+```
+
+```{r}
+lm6 = lm(y~x+I(x^2))
+summary(lm6)
+```
+
+(j) As the variance of the data decreases, the confidence interval decreases as well.
+```{r}
+confint(lm1)
+confint(lm3)
+confint(lm5)
+```
+
+## P4
+```{r}
+Ad = read.csv("Advertising.csv", header=T, na.strings="?")
+dim(Ad)
+```
+(1) newspaper
+```{r}
+lm_ad_news = lm(Ad$sales~Ad$newspaper)
+plot(Ad$newspaper,Ad$sales, col="red")
+```
+```{r}
+lm_ad_news = lm(Ad$sales~Ad$newspaper)
+lm_ad_news_pred = predict(lm_ad_news, interval="confidence", level=0.92)
+summary(lm_ad_news_pred)
+```
+
+```{r}
+#install.packages("basicTrendline")
+library(basicTrendline)
+```
+
+```{r}
+trendline(Ad$sales, Ad$newspaper, CI.level=0.92)
+```
+(2) TV
+```{r}
+lm_ad_tv = lm(Ad$sales~Ad$TV)
+plot(Ad$TV,Ad$sales, col="red")
+```
+```{r}
+lm_ad_tv = lm(Ad$sales~Ad$TV)
+lm_ad_tv_pred = predict(lm_ad_tv, interval="confidence", level=0.92)
+summary(lm_ad_tv_pred)
+```
+
+```{r}
+trendline(Ad$sales, Ad$TV, CI.level=0.92)
+```
+
+(3) Radio
+```{r}
+lm_ad_radio = lm(Ad$sales~Ad$radio)
+plot(Ad$radio,Ad$sales, col="red")
+```
+
+```{r}
+lm_ad_radio = lm(Ad$sales~Ad$radio)
+lm_ad_radio_pred = predict(lm_ad_radio, interval="confidence", level=0.92)
+summary(lm_ad_radio_pred)
+```
+
+```{r}
+trendline(Ad$sales, Ad$radio, CI.level=0.92)
+```
+
+P5
+```{r}
+Auto = read.csv("Auto.csv", header=T, na.strings="?")
+dim(Auto)
+```
+```{r}
+Auto[1:4,]
+```
+
+(a)
+```{r}
+pairs(Auto, col="red")
+```
+(b)
+```{r}
+selected = Auto[,1:8]
+dim(selected)
+```
+
+```{r}
+cor(selected)
+```
+
+(c)
+```{r}
+lm_mul = lm(Auto$mpg~Auto$cylinders+Auto$displacement+Auto$horsepower+Auto$weight+Auto$acceleration+Auto$year)
+summary(lm_mul)
+```
+i: Yes, there's a relationship between the predictors and the response, as the adjusted R-square score is 0.8063.
+ii: Weight and year appear to have a statistically significant relationship to the response.
+iii: It suggests that the year is very important to the mpg, as year increases(i.e. the car models are newer), the mpg increases significantly.
+
+(d)
+```{r}
+lm_mul2 = lm(Auto$mpg~sqrt(Auto$cylinders)+sqrt(Auto$displacement)+sqrt(Auto$horsepower)+sqrt(Auto$weight)+sqrt(Auto$acceleration)+sqrt(Auto$year))
+summary(lm_mul2)
+```
+For $\sqrt{X}$, the model is very similar to X, and the adjusted R-square score increased. The most important features are still year and weight.
+```{r}
+lm_mul3 = lm(Auto$mpg~I(Auto$cylinders^2)+I(Auto$displacement^2)+I(Auto$horsepower^2)+I(Auto$weight^2)+I(Auto$acceleration^2)+I(Auto$year^2))
+summary(lm_mul3)
+```
+For $X^2$, the adjusted R-square score decreases. The most important features include cylinders as well.
+```{r}
+lm_mul4 = lm(Auto$mpg~log(Auto$cylinders)+log(Auto$displacement)+log(Auto$horsepower)+log(Auto$weight)+log(Auto$acceleration)+log(Auto$year))
+summary(lm_mul4)
+```
+For $log(X)$, the model's adjusted R-square score increased significantly. The most important features also includes horsepower.

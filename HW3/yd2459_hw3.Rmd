@@ -1,0 +1,121 @@
+---
+title: "yd2459_HW3"
+author: "Yihang Ding"
+date: "10/21/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+P3
+Use NewtonRaphson algorithm from Section 4.4.1, pp. 120-121, [ESL] book and perform 10 iterations. Hint: Use library(matlib) for calculating matrix inverses.
+```{r}
+library(matlab)
+x = c(0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
+y = c(0, 0, 0, 1, 0, 1)
+first = function(beta){
+  f1 = sum((exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x)))-y)
+  f2 = sum(((exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x)))-y)*x)
+  matrix(c(f1, f2), ncol=1, nrow=2)
+}
+
+second = function(beta){
+  f1 = sum(exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x))^2)
+  f2 = sum(exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x))^2*x)
+  f3 = sum(exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x))^2*x)
+  f4 = sum(exp(beta[1]+beta[2]*x)/(1+exp(beta[1]+beta[2]*x))^2*x*x)
+  matrix(c(f1, f2, f3, f4), ncol = 2, nrow = 2)
+}
+
+beta = c(0, 0)
+sequence = seq(1,10)
+b1 = seq(1,10)
+b2 = seq(1,10)
+for(val in sequence){
+  # update: new = old - second^-1 * first
+  beta = beta - solve(second(beta))%*%first(beta)
+  cat("Update ", val, ",beta0: ",beta[1], ", beta1:", beta[2],"\n")
+  b1[val] = beta[1]
+  b2[val] = beta[2]
+}
+b1
+b2
+select = glm(y~x,family = "binomial")
+select$coefficients[1]
+select$coefficients[2]
+```
+Answer: $\beta_0$ = -4.098, $\beta_1$ = 5.723
+
+P7
+(a) First run set.seed(1000), and then create a training set containing a random sample of 800 observations, and a test set containing the remaining observations.
+```{r}
+library(ISLR)
+set.seed(1000)
+dim(OJ)
+sample = sample.int(n = dim(OJ)[1], size = 800, replace = F)
+train = OJ[sample, ]
+test = OJ[-sample, ]
+dim(train)
+dim(test)
+```
+
+(b) Fit a tree to the training data, with Purchase as the response and the other variables as predictors. Use the summary() function to produce summary statistics about the tree, and describe the results obtained. What is the training error rate? How many terminal nodes does the tree have?
+```{r}
+library(tree)
+fit = tree(Purchase~., data = train)
+summary(fit)
+```
+Training error rate is 0.16, the tree has 8 terminal nodes.
+
+(c) Type in the name of the tree object in order to get a detailed text output. Pick one of the terminal nodes, and interpret the information displayed.
+```{r}
+fit
+```
+Take "9) LoyalCH > 0.035047 113  108.50 MM ( 0.18584 0.81416 ) *" for example, it uses LoyalCH with threshold 0.35047 as split feature, and get 113 samples. With deviance 108.5 and prediction value as MM.
+
+(d) (2pt) Create a plot of the tree, and interpret the results.
+```{r}
+plot(fit, main='OJ train Decision Tree')
+text(fit)
+```
+
+(e) (3pt) Predict the response on the test data, and produce a confusion matrix comparing the test labels to the predicted test labels. What is the test error rate?
+```{r}
+pred = predict(fit, test, type = 'class')
+summary(pred)
+table(pred, test$Purchase)
+mean(pred != test$Purchase)
+```
+Test error rate is 0.18.
+
+(f) (2pt) Apply the cv.tree() function to the training set in order to determine the optimal tree size.
+```{r}
+cv_fit = cv.tree(fit, FUN=prune.misclass)
+cv_fit
+```
+Optimal tree size is 4.
+
+(g) (3pt) Produce a plot with tree size on the x-axis and cross-validated classification error rate on the y-axis.
+```{r}
+plot(x=cv_fit$size, y=cv_fit$k, type='b', xlab='Tree Size', ylab='CV err rate')
+```
+
+(h) (1pt) Which tree size corresponds to the lowest cross-validated classification error rate?
+Tree with size 4 has the lowest CV classification error rate.
+
+(i) (3pt) Produce a pruned tree corresponding to the optimal tree size obtained using cross-validation. If cross-validation does not lead to selection of a pruned tree, then create a pruned tree with five terminal nodes.
+```{r}
+prune = prune.misclass(fit, best=4)
+summary(prune)
+```
+
+(j) (2pt) Compare the training error rate between the pruned and unpruned tree. Which is higher?
+Pruned tree has higher train error rate.
+
+(k) (2pt) Compare the test error rates between the pruned and unpruned trees. Which is higher?
+```{r}
+prune_pred = predict(prune, test, type = 'class')
+mean(prune_pred != test$Purchase)
+```
+Pruned tree has higher test error rate.

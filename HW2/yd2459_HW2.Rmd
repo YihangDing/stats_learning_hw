@@ -1,0 +1,322 @@
+---
+title: "HW2"
+author: "Yihang Ding"
+date: "10/10/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(lasso2)
+```
+P2
+(a)
+With $y_1$ = 2 and $\lambda$ = 1, (1) equals to $(2-{\beta_1})^2$ + $\beta_1^2$, i.e. 2$\beta_1^2$-4$\beta_1$+4
+Under which in (3), $\hat{\beta_1^R}$ = 2/(1+$\lambda$) = 1
+So the min value of plot should be where x = 1, which can be proved by the plot.
+```{r}
+beta = seq(from = -5, to = 5, by = 0.1)
+plot(beta, 2*beta^2-4*beta+4, col='red', type = "b")
+abline(v=1, col='blue')
+```
+
+(b)
+With $y_1$ = 2 and $\lambda$ = 1, (2) equals to $(2-\beta_1)^2$ + |$\beta_1$|, i.e. $\beta_1^2$-4$\beta_1$+4+|$\beta_1$|
+Under which in (4), $\hat{\beta_1^R}$ = 2-1/2 = 1.5
+So the min value of plot should be where x = 1.5.
+```{r}
+beta = seq(from = -4, to = 5, by = 0.1)
+plot(beta, beta^2-4*beta+4+abs(beta), col='red', type = "b")
+abline(v=1.5, col='blue')
+```
+
+
+P4
+a)
+```{r}
+set.seed(1)
+x = rnorm(100, 0, 1)
+eps = rnorm(100, 0, 0.25)
+```
+
+b)
+```{r}
+b0 = 1
+b1 = 2
+b2 = 3
+b3 = 4
+y = b0 + b1*x + b2*I(x^2) + b3*I(x^3) + eps
+```
+
+c)
+```{r}
+library(leaps)
+library(ISLR)
+df = data.frame(y, x)
+fit = regsubsets(y ~ poly(x, 10), data = df, nvmax = 10)
+fit_sum = summary(fit)
+which.min(fit_sum$cp)
+which.min(fit_sum$bic)
+which.max(fit_sum$adjr2)
+```
+```{r}
+par(mfrow = c(1,3))
+plot(fit_sum$cp, xlab = "subset num", ylab = "Cp", type = "b", pch = 20)
+title("Cp")
+points(4, fit_sum$cp[4], col = 'red')
+
+plot(fit_sum$bic, xlab = "subset num", ylab = "BIC", type = "b", pch = 20)
+title("BIC")
+points(3, fit_sum$bic[3], col = "red")
+
+plot(fit_sum$adjr2, xlab = "subset num", ylab = "adj R2", type = "b", pch = 20)
+title("adjR2")
+points(5, fit_sum$adjr2[5], col = "red")
+```
+```{r}
+coefficients(fit, id = 3)
+```
+
+
+(d) forward
+```{r}
+fit_fwd = regsubsets(y ~ poly(x, 10), data = df, nvmax = 10, method = "forward")
+fwd_sum = summary(fit_fwd)
+which.min(fwd_sum$cp)
+which.min(fwd_sum$bic)
+which.max(fwd_sum$adjr2)
+```
+```{r}
+par(mfrow = c(1,3))
+plot(fwd_sum$cp, xlab = "subset num", ylab = "Cp", type = "b", pch = 20)
+title("Cp")
+points(4, fwd_sum$cp[4], col = 'red')
+
+plot(fwd_sum$bic, xlab = "subset num", ylab = "BIC", type = "b", pch = 20)
+title("BIC")
+points(3, fwd_sum$bic[3], col = "red")
+
+plot(fwd_sum$adjr2, xlab = "subset num", ylab = "adj R2", type = "b", pch = 20)
+title("adjR2")
+points(5, fwd_sum$adjr2[5], col = "red")
+```
+```{r}
+coefficients(fit_fwd, id = 3)
+```
+
+backward
+```{r}
+fit_bwd = regsubsets(y ~ poly(x, 10), data = df, nvmax = 10, method = "backward")
+# backward
+bwd_sum = summary(fit_fwd)
+which.min(bwd_sum$cp)
+which.min(bwd_sum$bic)
+which.max(bwd_sum$adjr2)
+```
+```{r}
+par(mfrow = c(1,3))
+plot(bwd_sum$cp, xlab = "subset num", ylab = "Cp", type = "b", pch = 20)
+title("Cp")
+points(4, bwd_sum$cp[4], col = 'red')
+
+plot(bwd_sum$bic, xlab = "subset num", ylab = "BIC", type = "b", pch = 20)
+title("BIC")
+points(3, bwd_sum$bic[3], col = "red")
+
+plot(bwd_sum$adjr2, xlab = "subset num", ylab = "adj R2", type = "b", pch = 20)
+title("adjR2")
+points(5, bwd_sum$adjr2[5], col = "red")
+```
+```{r}
+coefficients(fit_bwd, id = 3)
+```
+Both forward and backword method pick $X^1$, $X^2$, $X^2$
+
+(e)
+```{r}
+library(glmnet)
+mat = model.matrix(y ~ poly(x, 10), data = df)[,-1]
+lasso = cv.glmnet(mat, y, alpha = 1)
+lambda_fit = lasso$lambda.min
+lambda_fit
+```
+```{r}
+plot(lasso)
+```
+
+```{r}
+model_fit = glmnet(mat, y)
+predict(model_fit, s = lambda_fit, type = "coefficients")
+```
+Lasso also picks $X^1$, $X^2$, $X^3$.
+
+(f) Set $\beta_7$ = 7
+```{r}
+b7 = 7
+y = b0 + b7*x^7 + eps
+data = data.frame(y, x)
+fit = regsubsets(y ~ poly(x, 10, raw = T), data = data, nvmax = 10)
+fit_sum = summary(fit)
+which.min(fit_sum$cp)
+which.min(fit_sum$bic)
+which.max(fit_sum$adjr2)
+```
+```{r}
+coefficients(fit, id = 2)
+```
+```{r}
+coefficients(fit, id = 1)
+```
+```{r}
+coefficients(fit, id = 4)
+```
+BIC picks only 1 variable while Cp and adjustedR2 pick more variables.
+
+P5
+```{r}
+library(ISLR)
+data('College')
+typeof(College)
+dim(College)
+```
+
+(a) train test split: portion: 0.7 train, 0.3 test
+```{r}
+library(caret)
+library(tidyverse)
+library(caTools)
+
+set.seed(1)
+sample = sample.split(College,SplitRatio = 0.7) 
+training = subset(College,sample ==TRUE)
+testing = subset(College, sample==FALSE)
+
+preprocessor = preProcess(training, method = c('center', 'scale'))
+training = predict(preprocessor, training)
+testing = predict(preprocessor, testing)
+
+encoder = dummyVars(Apps ~ ., data = training)
+x_train = predict(encoder, training)
+x_test = predict(encoder, testing)
+
+y_train = training$Apps
+y_test = testing$Apps
+```
+
+(b) linear
+```{r}
+lm <- lm(Apps ~ ., data = training)
+
+pred <- predict(lm, testing)
+summary(pred)
+postResample(pred, testing$Apps)
+
+```
+
+(c) ridge
+```{r}
+ridge = cv.glmnet(x_train, y_train, alpha = 0)
+ridge_fit = glmnet(x_train, y_train, alpha = 0)
+lambda_fit = ridge$lambda.min
+lambda_fit
+```
+```{r}
+ridge_pred = predict(ridge_fit, s = lambda_fit, newx = x_test)
+mean((ridge_pred - y_test)^2)
+```
+
+(d) lasso
+```{r}
+lasso = cv.glmnet(x_train, y_train, alpha = 1)
+lasso_fit = glmnet(x_train, y_train, alpha = 1)
+lambda_fit = lasso$lambda.min
+lambda_fit
+```
+
+```{r}
+lasso_pred = predict(lasso_fit, s = lambda_fit, newx = x_test)
+mean((lasso_pred - y_test)^2)
+predict(lasso_fit, s = lambda_fit, newx = x_test, type = "coefficient")
+```
+
+P6
+(a)
+```{r}
+set.seed(1)
+p = 20
+n = 1000
+x = matrix(rnorm(n * p), n, p)
+beta = rnorm(p)
+eps = rnorm(p)
+
+beta[3] = 0
+beta[8] = 0
+beta[10] = 0
+beta[15] = 0
+y = x %*% beta + eps
+dim(y)
+```
+(b) train test split
+```{r}
+spliter = sample(seq(1000), 100, replace = FALSE)
+x_train = x[spliter, ]
+x_test = x[-spliter, ]
+
+y_train = y[spliter, ]
+y_test = y[-spliter, ]
+dim(x_train)
+dim(x_test)
+```
+(c) subset selection
+```{r}
+df = data.frame(x = x_train, y = y_train)
+fit= regsubsets(y ~ ., data = df,nvmax = p)
+
+pred_err = seq(1,p)
+x_cols = colnames(x, do.NULL = FALSE, prefix = "x.")
+# compute pred err for each p
+for (i in 1:p) {
+  coefi = coef(fit, id = i)
+  pred =as.matrix(x_train[, x_cols %in% names(coefi)]) %*% coefi[names(coefi) %in%x_cols]
+  pred_err[i] = mean((y_train - pred)^2)
+}
+plot(pred_err, type = "b")
+```
+
+(d) test err
+```{r}
+for (i in 1:p) {
+  coefi = coef(fit, id = i)
+  pred =as.matrix(x_test[, x_cols %in% names(coefi)]) %*% coefi[names(coefi) %in%x_cols]
+  pred_err[i] = mean((y_test - pred)^2)
+}
+plot(pred_err, type = "b")
+```
+(e)
+```{r}
+which.min(pred_err)
+```
+For model size 17, the test set MSE takes its min value.
+
+(f)
+```{r}
+coef(fit, id = 17)
+```
+
+```{r}
+pred_err = seq(1,p)
+co = seq(1,p)
+err = seq(1,p)
+for (i in 1:p) {
+  coefi = coef(fit, id = i)
+  co[i] = length(coefi) - 1
+  err[i] = sqrt(sum((beta[x_cols %in% names(coefi)] - coefi[names(coefi) %in% x_cols])^2) + sum(beta[!(x_cols %in% names(coefi))]^2))
+}
+plot(x = co, y = err, type = "b")
+```
+The trend of two lines are very similar, but the test MST plot decreases more drastically at the beginning.
+
+
